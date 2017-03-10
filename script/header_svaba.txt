@@ -1,0 +1,1 @@
+Disease	Barcode	Chr_1	Pos_1	Dir_1	Chr_2	Pos_2	Dir_2	Qua	Variant_Type	Gene_1	Gene_2	Exon_1	Exon_2	---	Num_Tumor_Var_Read_Pair	Comp	Cancer_Gene_1	Cancer_Gene_2	Cancer_Exon_1	Cancer_Exon_2
