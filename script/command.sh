@@ -25,16 +25,17 @@ done
 for file in output_svaba/${disease}/*.svaba.somatic.sv.vcf.txt; do
   bf=`basename ${file%.*}`
   echo $bf
-  echo "~/.local/bin/sv_utils filter --remove_simple_repeat --re_annotation --pooled_control_file output_svaba/all_merge_control_svaba.bedpe.gz --min_variant_size 100 --inversion_size_thres 1000 $file output_svaba/${disease}/${bf}.filtered.txt /home/kchiba/work_directory/work_svaba/sv_utils-0.4.0beta/resource"
   ~/.local/bin/sv_utils filter --remove_simple_repeat --re_annotation --pooled_control_file output_svaba/all_merge_control_svaba.bedpe.gz --min_variant_size 100 --inversion_size_thres 1000 $file output_svaba/${disease}/${bf}.filtered.txt /home/kchiba/work_directory/work_svaba/sv_utils-0.4.0beta/resource
 done
-#__co
 
 # 2. copy genomonSV results without header
-for file in ~omega3/omega_project/genomon2_2_0_alpha/${disease}/sv/*/*.genomonSV.result.txt; do
+#for file in ~omega3/omega_project/genomon2_2_0_alpha/${disease}/sv/*/*.genomonSV.result.txt; do
+for file in /home/kchiba/work_directory/work_svaba/database/omega_SV/${disease}/*.genomonSV.result.filt3.txt; do
   bf=`basename $file`;
   echo $bf
-  cat $file | awk 'NR>4' > output_genomonSV/${disease}/${bf};
+  barcode=${bf%.*.*.*.*}
+  # cat $file | awk 'NR>4' > output_genomonSV/${disease}/${bf};
+  cat $file | awk 'NR>1' > output_genomonSV/${disease}/${barcode}.genomonSV.result.txt;
 done
 
 # 2-2. filtering genomonSV results
@@ -42,7 +43,6 @@ for file in output_genomonSV/${disease}/*-0?.genomonSV.result.txt; do
   bf=`basename $file`
   barcode=${bf%.*.*.*}
   echo $barcode
-  echo "~/.local/bin/sv_utils filter --remove_simple_repeat --pooled_control_file output_genomonSV/all_merge_control_genomonSV.bedpe.gz  --min_tumor_allele_freq 0.05  --min_variant_size 100 --inversion_size_thres 1000 $file output_genomonSV/${disease}/${barcode}.genomonSV.result.filtered.txt /home/kchiba/work_directory/work_svaba/sv_utils-0.4.0beta/resource"
   ~/.local/bin/sv_utils filter --remove_simple_repeat --pooled_control_file output_genomonSV/all_merge_control_genomonSV.bedpe.gz  --min_tumor_allele_freq 0.05 --min_variant_size 100 --inversion_size_thres 1000 $file output_genomonSV/${disease}/${barcode}.genomonSV.result.filtered.txt /home/kchiba/work_directory/work_svaba/sv_utils-0.4.0beta/resource
 done
 
@@ -56,8 +56,8 @@ for file in output_genomonSV/${disease}/*-0?.genomonSV.result.filtered.txt; do
 done
 
 # 4. merge results file
-python merge_result_final.py $disease > output_comp/${disease}_GenomonSV_SvABA_comp.txt
-python merge_result_final2.py $disease > output_comp/${disease}_SvABA_GenomonSV_comp.txt
+python merge_result_final.py $disease "output_comp/${disease}/*.GenomonSV_SvABA.comp.txt" > output_comp/${disease}_GenomonSV_SvABA_comp.txt
+python merge_result_final2.py $disease  "output_comp/${disease}/*.SvABA_GenomonSV.comp.txt" > output_comp/${disease}_SvABA_GenomonSV_comp.txt
 
 #__co
 

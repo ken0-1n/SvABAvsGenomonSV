@@ -11,7 +11,7 @@ qsub command.sh HNSC
 qsub command.sh KICH
 qsub command.sh KIRC
 qsub command.sh KIRP
-qsub command.sh LAML
+# qsub command.sh LAML
 qsub command.sh LGG
 qsub command.sh LIHC
 qsub command.sh LUAD
@@ -28,7 +28,7 @@ qsub command.sh STAD
 qsub command.sh TGCT
 qsub command.sh THCA
 qsub command.sh THYM
-qsub command.sh UCEC
+# qsub command.sh UCEC
 qsub command.sh UCS
 qsub command.sh UVM
 

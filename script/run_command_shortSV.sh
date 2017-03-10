@@ -11,7 +11,7 @@ qsub command_shortSV.sh HNSC
 qsub command_shortSV.sh KICH
 qsub command_shortSV.sh KIRC
 qsub command_shortSV.sh KIRP
-qsub command_shortSV.sh LAML
+# qsub command_shortSV.sh LAML
 qsub command_shortSV.sh LGG
 qsub command_shortSV.sh LIHC
 qsub command_shortSV.sh LUAD
@@ -28,7 +28,7 @@ qsub command_shortSV.sh STAD
 qsub command_shortSV.sh TGCT
 qsub command_shortSV.sh THCA
 qsub command_shortSV.sh THYM
-qsub command_shortSV.sh UCEC
+# qsub command_shortSV.sh UCEC
 qsub command_shortSV.sh UCS
 qsub command_shortSV.sh UVM
 
