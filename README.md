@@ -34,7 +34,8 @@ svaba run -a output_dir -G reference -t normal.bam -A -v 1
 # -v --verbose       select verbosity level (0-4).
 ```
 
-### 2-1 SvABA(SV)のコントロールパネルを作成する
+### 9470検体のコントロールパネルを作成
+2-1 SvABA(SV)のコントロールパネルを作成する
 ```
 # SvABAのSV結果(VCF)をGenomonSV形式に変換する。
 python VCFtoGenomonSVFormat.py svaba_result.vcf "False"  | sort -u > svaba_result.txt
@@ -45,12 +46,12 @@ python VCFtoGenomonSVFormat.py svaba_result.vcf "False"  | sort -u > svaba_resul
 # 9470検体分のノーマルリストを作成し、sv_utils merge_controlを実行
 sv_utils merge_control all_control_panel.list all_merge_control_svaba
 ```
-### 2-2 GenomonSVのコントロールパネルを作成する
+2-2 GenomonSVのコントロールパネルを作成する
 ```
 # 9470検体分のノーマルリストを作成し、sv_utils merge_controlを実行
 sv_utils merge_control all_control_panel.list all_merge_control_genomonsv
 ```
-### 2-3 SvABA(InDel)のコントロールパネルを作成する
+2-3 SvABA(InDel)のコントロールパネルを作成する
 ```
 # SvABA(InDel)をAnnovar形式に変換する
 python svabaIndeltoAnnovarFormat.py svaba_result_indel.vcf | sort -u > svaba_result_indel.txt
@@ -60,7 +61,8 @@ bgzip -f svaba_indel_blacklist.bed.gz
 tabix -p bed svaba_indel_blacklist.bed.gz
 ```
 
-### 3-1. sv_utils filterでSvABAの結果をフィルタ
+### SVの比較
+3-1. sv_utils filterでSvABAの結果をフィルタ
 ```
 # somaticの場合は引数2を"True"にする。
 python VCFtoGenomonSVFormat.py svaba_result.vcf "True"  | sort -u > svaba_result.txt
@@ -75,8 +77,7 @@ sv_utils filter \
     svaba_result.txt \
     resource
 ```
-
-### 3-2. sv_utils filterでGenomonSVの結果をフィルタ
+3-2. sv_utils filterでGenomonSVの結果をフィルタ
 ```
 sv_utils filter \
     --remove_simple_repeat \
@@ -87,8 +88,7 @@ sv_utils filter \
     genomon_result.filt.txt \
     resource
 ```
-
-### 3-3. SvABAとGenomonSVを比較する
+3-3. SvABAとGenomonSVを比較する
 ```
 fusion_utils comp \
     genomon.filtered.txt \
@@ -106,8 +106,8 @@ fusion_utils comp \
     svaba-genomon.result.txt \
     bdtools/bin \
 ```
-
-### 4-1. SvABAの結果(VCF)をGenomonSV形式に変換する
+### Indelの比較
+4-1. SvABAの結果(VCF)をGenomonSV形式に変換する
 ```
 # somaticの場合は引数2を"True"にする。
 python VCFtoGenomonSVFormat.py svaba_result.vcf "True"  | sort -u > svaba_result.txt
