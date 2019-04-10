@@ -13,8 +13,9 @@ The comparison of SvABA and GenomonSV
 3-2. sv_utils filterでGenomonSVの結果をフィルタ
 3-3. SvABAとGenomonSVを比較する
 
-3. Indelの比較
-3-1. SvABAの結果(VCF)をGenomonSV形式に変換する
+4. Indelの比較
+4-1. sv_utils filterでSvABA SVの結果をフィルタ
+4-2. SvABA indelの結果をフィルタ
 3-2. 
 3-3.
 
@@ -34,14 +35,14 @@ svaba run -a output_dir -G reference -t normal.bam -A -v 1
 # -v --verbose       select verbosity level (0-4).
 ```
 
-### 9470検体のコントロールパネルを作成
+### 2. 9470検体のコントロールパネルを作成
 2-1 SvABA(SV)のコントロールパネルを作成する
 ```
 # SvABAのSV結果(VCF)をGenomonSV形式に変換する。
 python VCFtoGenomonSVFormat.py svaba_result.vcf "False"  | sort -u > svaba_result.txt
 
 # 補足
-# [2]: Normalのみの場合はFalseを指定する。Tumor/Normalペア解析の結果のVCFとカラム数が異なるため
+# argv[2]: Normalのみの場合はFalseを指定する。
 
 # 9470検体分のノーマルリストを作成し、sv_utils merge_controlを実行
 sv_utils merge_control all_control_panel.list all_merge_control_svaba
@@ -61,11 +62,14 @@ bgzip -f svaba_indel_blacklist.bed.gz
 tabix -p bed svaba_indel_blacklist.bed.gz
 ```
 
-### SVの比較
+### 3,SVの比較
 3-1. sv_utils filterでSvABAの結果をフィルタ
 ```
-# somaticの場合は引数2を"True"にする。
+# VCFをGenomonSVフォーマットに変換する
 python VCFtoGenomonSVFormat.py svaba_result.vcf "True"  | sort -u > svaba_result.txt
+
+# 補足
+# argv[2]: Tumor/Normalペアの場合はTrueを指定する。
 
 # フィルタする
 sv_utils filter \
@@ -75,7 +79,7 @@ sv_utils filter \
     --min_variant_size 100 \
     --inversion_size_thres 1000 \
     svaba_result.txt \
-    resource
+    resources
 ```
 3-2. sv_utils filterでGenomonSVの結果をフィルタ
 ```
@@ -86,7 +90,7 @@ sv_utils filter \
     --min_variant_size 100 \
     --inversion_size_thres 1000 \
     genomon_result.filt.txt \
-    resource
+    resources
 ```
 3-3. SvABAとGenomonSVを比較する
 ```
@@ -107,8 +111,43 @@ fusion_utils comp \
     bdtools/bin \
 ```
 ### Indelの比較
-4-1. SvABAの結果(VCF)をGenomonSV形式に変換する
+4-1. sv_utils filterでSvABA SVの結果をフィルタ
 ```
-# somaticの場合は引数2を"True"にする。
+#  VCFをGenomonSVフォーマットに変換する
 python VCFtoGenomonSVFormat.py svaba_result.vcf "True"  | sort -u > svaba_result.txt
+
+# フィルタする
+sv_utils filter \
+    --without_translocation \
+    --remove_simple_repeat \
+    --re_annotation \
+    --pooled_control_file all_merge_control\svaba.bedpe.gz \
+    --max_variant_size 100 \
+    --min_ins_variant_size 12 \
+    --min_del_variant_size 20 \
+    svaba_filtered_tmp.txt \
+    resources
+    
+# GenomonSVからANNOフォーマットに変換する
+python svabaSVtoAnnoFormat.py svaba_filtered_tmp.txt | sort -u > svaba_filtered.txt
+
 ```
+4-2. SvABA indelの結果をフィルタ
+```
+# VCFをANNOフォーマットに変換する
+python svabaIndeltoAnnoFormat.py svaba.indel.vcf > svaba.indel.vcf
+
+# フィルタする
+python blacklist.py svaba.indel.txt svaba_indel_blacklist.bed.gz svaba.filtered.txt svaba.error.txt 10 100 12 20
+
+# 補足
+# argv[5]: min_candidate = 10
+# argv[6]: max_variant_size = 100
+# argv[7]: min_ins_size = 12
+# argv[8]: min_del_size = 20 
+
+
+
+```
+
+
