@@ -9,7 +9,7 @@ The comparison of SvABA and GenomonSV
 2-3 SvABA(InDel)のコントロールパネルを作成する  
   
 3. SVの比較   
-3-1. SvABAの結果をフィルタする
+3-1. SvABAの結果をフィルタする  
 3-2. GenomonSVの結果をフィルタする    
 3-3. SvABAとGenomonSVを比較する  
   
