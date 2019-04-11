@@ -3,21 +3,22 @@ The comparison of SvABA and GenomonSV
 
 1. SvABAの実行
 
-2. 9470検体のコントロールパネルを作成
-2-1 SvABA(SV)のコントロールパネルを作成する
-2-2 GenomonSVのコントロールパネルを作成する
-2-3 SvABA(InDel)のコントロールパネルを作成する
-
-3. SVの比較
-3-1. sv_utils filterでSvABAの結果をフィルタ
-3-2. sv_utils filterでGenomonSVの結果をフィルタ
-3-3. SvABAとGenomonSVを比較する
-
-4. Indelの比較
-4-1. sv_utils filterでSvABA SVの結果をフィルタ
-4-2. SvABA indelの結果をフィルタ
-3-2. 
-3-3.
+2. 9470検体のコントロールパネルを作成  
+2-1 SvABA(SV)のコントロールパネルを作成する  
+2-2 GenomonSVのコントロールパネルを作成する  
+2-3 SvABA(InDel)のコントロールパネルを作成する  
+  
+3. SVの比較   
+3-1. SvABAの結果をフィルタする
+3-2. GenomonSVの結果をフィルタする    
+3-3. SvABAとGenomonSVを比較する  
+  
+4. Indelの比較  
+4-1. SvABA SV結果をフィルタする  
+4-2. SvABA indel結果をフィルタする  
+4-3. 4-1.と4-2.で出力したファイルをマージし、アノテーションする  
+4-4. GenomonSVの結果をフィルタしてアノテーションする
+4-5. SvABAとGenomonSVを比較する
 
 ### 1. SVABAの実行
 ```
@@ -156,7 +157,7 @@ cat svaba_filtered.txt svaba.indel_filtered.txt > svaba.sv.indel.filtered.txt
 # Annovarでアノテーションする
 table_annovar.pl --outfile svaba.sv.indel.anno.txt -buildver hg19 -remove --otherinfo -protocol refGene -operation g svaba.sv.indel.filtered.txt
 ```
-4-4 GenomonSVをフィルタしてアノテーションする
+4-4 GenomonSVの結果をフィルタしてアノテーションする
 ```
 sv_utils filter \
     --without_translocation \
