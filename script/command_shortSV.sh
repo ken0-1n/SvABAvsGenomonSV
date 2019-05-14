@@ -4,95 +4,91 @@
 #$ -cwd                 # execute at the submitted dir
 #$ -o log -e log
 
-disease=$1
+set -e 
+
+DISEASE=$1
+
+if [ $# -ne 1 ]; then
+  echo "wrong number of arguments"
+  exit 1
+fi
 
 : <<'#__co'
 #__co
-
-mkdir -p output_svaba/${disease}
-mkdir -p output_svaba_shortSV/${disease}
-mkdir -p output_genomonSV/${disease}
-mkdir -p output_genomonSV_shortSV/${disease}
-mkdir -p output_comp/${disease}
-mkdir -p output_comp_shortSV/${disease}
-
-: <<'#__co'
 #__co
-: <<'#__co'
-#__co
-# 1. format change
+
+mkdir -p ../output_svaba_shortSV/${DISEASE}
+mkdir -p ../output_genomonSV_shortSV/${DISEASE}
+mkdir -p ../output_comp_shortSV/${DISEASE}
+
+SIMPLE_REPEAT=../simpleRepeat.txt.gz
+REFERENCE=/home/w3varann/.genomon_local/genomon_pipeline-2.6.1/database/GRCh37/GRCh37.fa
+ANNOVAR_DIR=/home/kchiba/tools/annovar
+
+# 1-1. combert svaba.sv to annover format 
 # tumor
-for file in ../output/${disease}/*/*.svaba.somatic.sv.vcf; do
-  bf=`basename $file`;
-  echo $bf
-  python VCFtoGenomonSVFormat.py $file "True" | sort -u > output_svaba_shortSV/${disease}/${bf}.txt;
-done
-
-# tumor
-for file in ../output/${disease}/*/*.svaba.somatic.indel.vcf; do
-  bf=`basename $file`;
-  echo $bf
-  python svavaIndeltoAnnoFormat.py $file | sort -u > output_svaba_shortSV/${disease}/${bf}.txt;
-done
-
-# 1-3. filtering svaba results
-for file in output_svaba_shortSV/${disease}/*.svaba.somatic.sv.vcf.txt; do
-  bf=`basename ${file%.*}`
-  echo $bf
-  ~/.local/bin/sv_utils filter --without_translocation --remove_simple_repeat --re_annotation --pooled_control_file output_svaba/all_merge_control_svaba.bedpe.gz --max_variant_size 100 --min_ins_variant_size 12 --min_del_variant_size 20 $file output_svaba_shortSV/${disease}/${bf}.filtered.tmp.txt /home/kchiba/work_directory/work_svaba/sv_utils-0.4.0beta/resource
-
-  python svavaSVtoAnnoFormat.py output_svaba_shortSV/${disease}/${bf}.filtered.tmp.txt | sort -u > output_svaba_shortSV/${disease}/${bf}.filtered.txt
-done
-
-for file in output_svaba_shortSV/${disease}/*.svaba.somatic.indel.vcf.txt; do
-  bf=`basename ${file%.*}`
-  echo $bf
-  python blacklist.py $file output_svaba/svaba_short_indel_blacklist_sorted.bed.gz output_svaba_shortSV/${disease}/${bf}.filtered.txt output_svaba_shortSV/${disease}/${bf}.blacklist.txt 10 100 12 20
-done
-
-for file in output_svaba_shortSV/${disease}/*.svaba.somatic.sv.vcf.filtered.txt; do
-  bf=`basename ${file%.*}`
-  barcode=${bf%.*.*.*.*.*}
-  cat $file output_svaba_shortSV/${disease}/${barcode}.svaba.somatic.indel.vcf.filtered.txt > output_svaba_shortSV/${disease}/${barcode}.svaba.somatic.sv.indel.filtered.txt
-
-  /home/kchiba/tools/annovar/table_annovar.pl --outfile output_svaba_shortSV/${disease}/${barcode}.svaba.somatic.sv.indel.filtered -buildver hg19 -remove --otherinfo -protocol refGene -operation g output_svaba_shortSV/${disease}/${barcode}.svaba.somatic.sv.indel.filtered.txt /home/kchiba/tools/annovar/humandb
-done
-
-# 2. copy genomonSV results without header
-for file in /home/kchiba/work_directory/work_svaba/database/omega_SV/${disease}/*.genomonSV.result.filt3.txt; do
+# for file in ../svaba-somatic/${DISEASE}/TCGA-OR-A5J6-01.svaba.somatic.sv.vcf; do
+for file in ../svaba-somatic/${DISEASE}/*-0?.svaba.somatic.sv.vcf; do
   bf=`basename $file`;
   echo $bf
   barcode=${bf%.*.*.*.*}
-  # cat $file | awk 'NR>4' > output_genomonSV_shortSV/${disease}/${bf};
-  cat $file | awk 'NR>1' > output_genomonSV_shortSV/${disease}/${barcode}.genomonSV.result.txt;
+  echo "barcode=$barcode"
+  python VCFtoGenomonSVFormat.py $file $barcode "True" | sort -u > ../output_svaba_shortSV/${DISEASE}/${bf}.txt;
+  sv_utils filter --grc --simple_repeat_file ${SIMPLE_REPEAT} --pooled_control_file ../svaba-control/${DISEASE}/all_merge_control_svaba --inversion_size_thres 1000 ../output_svaba_shortSV/${DISEASE}/${bf}.txt ../output_svaba_shortSV/${DISEASE}/${bf}.filtered.txt
+  sv_utils format --reference $REFERENCE ../output_svaba_shortSV/${DISEASE}/${bf}.filtered.txt ../output_svaba_shortSV/${DISEASE}/${bf}.indel.vcf
+  python vcftoAnnoFormat.py ../output_svaba_shortSV/${DISEASE}/${bf}.indel.vcf | sort -u > ../output_svaba_shortSV/${DISEASE}/${bf}.indel.vcf.txt
 done
 
-# 2-2. filtering genomonSV results
-for file in output_genomonSV_shortSV/${disease}/*-0?.genomonSV.result.txt; do
-  bf=`basename $file`
-  barcode=${bf%.*.*.*}
+# 1-2. combert svaba.indel to annover format 
+# for file in ../svaba-somatic/${DISEASE}/TCGA-OR-A5J6-01.svaba.somatic.indel.vcf; do
+for file in ../svaba-somatic/${DISEASE}/*-0?.svaba.somatic.indel.vcf; do
+  bf=`basename $file`;
+  echo $bf
+  python vcftoAnnoFormat.py $file | sort -u > ../output_svaba_shortSV/${DISEASE}/${bf}.txt
+done
+
+for file in ../output_svaba_shortSV/${DISEASE}/*.svaba.somatic.sv.vcf.indel.vcf.txt; do
+  bf=`basename ${file%.*}`
+  barcode=${bf%.*.*.*.*.*.*}
   echo $barcode
-  ~/.local/bin/sv_utils filter --without_translocation --remove_simple_repeat --pooled_control_file output_genomonSV/all_merge_control_genomonSV.bedpe.gz  --min_tumor_allele_freq 0.05 --max_variant_size 100 --min_ins_variant_size 12 --min_del_variant_size 20 $file output_genomonSV_shortSV/${disease}/${barcode}.genomonSV.result.filtered.tmp.txt /home/kchiba/work_directory/work_svaba/sv_utils-0.4.0beta/resource
+  cat $file ../output_svaba_shortSV/${DISEASE}/${barcode}.svaba.somatic.indel.vcf.txt > ../output_svaba_shortSV/${DISEASE}/${barcode}.svaba.indel.merge.txt
 
-  python genomonSVtoAnnoFormat.py output_genomonSV_shortSV/${disease}/${barcode}.genomonSV.result.filtered.tmp.txt > output_genomonSV_shortSV/${disease}/${barcode}.genomonSV.result.filtered.txt
+  python blacklist.py ../output_svaba_shortSV/${DISEASE}/${barcode}.svaba.indel.merge.txt ../svaba-control/${DISEASE}/svaba_short_indel_blacklist_sorted.bed.gz ../output_svaba_shortSV/${DISEASE}/${barcode}.svaba.indel.filtered.txt ../output_svaba_shortSV/${DISEASE}/${barcode}.svaba.indel.blacklist.txt 10 100 12 20
 
-  /home/kchiba/tools/annovar/table_annovar.pl --outfile output_genomonSV_shortSV/${disease}/${barcode}.genomonSV.result.filtered -buildver hg19 -remove --otherinfo -protocol refGene -operation g output_genomonSV_shortSV/${disease}/${barcode}.genomonSV.result.filtered.txt /home/kchiba/tools/annovar/humandb
+  ${ANNOVAR_DIR}/table_annovar.pl --outfile ../output_svaba_shortSV/${DISEASE}/${barcode}.svaba.indel.filtered -buildver hg19 -remove --otherinfo -protocol refGene -operation g ../output_svaba_shortSV/${DISEASE}/${barcode}.svaba.indel.filtered.txt ${ANNOVAR_DIR}/humandb
+done
+
+# 2. copy genomonSV results without header
+# for file in ../genomonsv/${DISEASE}/*-0?.genomon_mutation.result.filt.svutil_mutation.txt; do
+for file in ../genomonsv/${DISEASE}/TCGA-OR-A5J6-01.genomon_mutation.result.filt.svutil_mutation.txt; do
+  bf=`basename $file`;
+  echo $bf
+  barcode=${bf%.*.*.*.*.*}
+  echo $barcode
+  cat $file | awk 'NR>4' > ../output_genomonSV_shortSV/${DISEASE}/${barcode}.genomonSV.result.txt;
+  sv_utils filter --grc --simple_repeat_file ${SIMPLE_REPEAT} --pooled_control_file ../genomonsv-control/${DISEASE}/all_merge_control_genomonSV --inversion_size_thres 1000 ../output_genomonSV_shortSV/${DISEASE}/${barcode}.genomonSV.result.txt ../output_genomonSV_shortSV/${DISEASE}/${barcode}.genomonSV.result.filtered.txt
+  sv_utils format --reference $REFERENCE ../output_genomonSV_shortSV/${DISEASE}/${barcode}.genomonSV.result.filtered.txt ../output_genomonSV_shortSV/${DISEASE}/${barcode}.genomonSV.result.indel.vcf
+  python vcftoAnnoFormat.py ../output_genomonSV_shortSV/${DISEASE}/${barcode}.genomonSV.result.indel.vcf | sort -u > ../output_genomonSV_shortSV/${DISEASE}/${barcode}.genomonSV.result.indel.vcf.txt
+  python blacklist.py ../output_genomonSV_shortSV/${DISEASE}/${barcode}.genomonSV.result.indel.vcf.txt empty_blacklist.bed.gz ../output_genomonSV_shortSV/${DISEASE}/${barcode}.genomonSV.result.indel.vcf.filtered.txt ../output_genomonSV_shortSV/${DISEASE}/${barcode}.genomonSV.result.indel.vcf.blacklist.txt 10 100 12 20
+  ${ANNOVAR_DIR}/table_annovar.pl --outfile ../output_genomonSV_shortSV/${DISEASE}/${barcode}.genomonSV.result.indel.vcf.filtered -buildver hg19 -remove --otherinfo -protocol refGene -operation g ../output_genomonSV_shortSV/${DISEASE}/${barcode}.genomonSV.result.indel.vcf.filtered.txt ${ANNOVAR_DIR}/humandb
 done
 
 # 3. comp genomonSV and svaba 
-for file in output_genomonSV_shortSV/${disease}/*-0?.genomonSV.result.filtered.hg19_multianno.txt; do
+for file in ../output_genomonSV_shortSV/${DISEASE}/*-0?.genomonSV.result.indel.vcf.filtered.hg19_multianno.txt; do
   bf=`basename $file`
-  barcode=${bf%.*.*.*.*.*}
+  barcode=${bf%.*.*.*.*.*.*.*}
   echo $barcode
-  python comp_anno.py ${file} output_svaba_shortSV/${disease}/${barcode}.svaba.somatic.sv.indel.filtered.hg19_multianno.txt > output_comp_shortSV/${disease}/${barcode}.GenomonSV_SvABA.comp.txt 
-  python comp_anno.py output_svaba_shortSV/${disease}/${barcode}.svaba.somatic.sv.indel.filtered.hg19_multianno.txt ${file} > output_comp_shortSV/${disease}/${barcode}.SvABA_GenomonSV.comp.txt
+  python comp_anno.py ${file} ../output_svaba_shortSV/${DISEASE}/${barcode}.svaba.indel.filtered.hg19_multianno.txt > ../output_comp_shortSV/${DISEASE}/${barcode}.GenomonSV_SvABA.comp.txt 
+  python comp_anno.py ../output_svaba_shortSV/${DISEASE}/${barcode}.svaba.indel.filtered.hg19_multianno.txt ${file} > ../output_comp_shortSV/${DISEASE}/${barcode}.SvABA_GenomonSV.comp.txt
 done
 
 # 4. merge results file
-python merge_result_final1_shortSV.py $disease "output_comp_shortSV/${disease}/*.GenomonSV_SvABA.comp.txt" > output_comp_shortSV/${disease}_GenomonSV_SvABA_comp_shortSV.txt
-python merge_result_final1_shortSV.py $disease "output_comp_shortSV/${disease}/*.SvABA_GenomonSV.comp.txt" > output_comp_shortSV/${disease}_SvABA_GenomonSV_comp_shortSV.txt
+python merge_result_final_shortSV.py $DISEASE "../output_comp_shortSV/${DISEASE}/*.GenomonSV_SvABA.comp.txt" > ../output_comp_shortSV/${DISEASE}_GenomonSV_SvABA_comp_shortSV.txt
+python merge_result_final_shortSV.py $DISEASE "../output_comp_shortSV/${DISEASE}/*.SvABA_GenomonSV.comp.txt" > ../output_comp_shortSV/${DISEASE}_SvABA_GenomonSV_comp_shortSV.txt
 
+: <<'#__co'
+: <<'#__co'
 #__co
 #__co
 #__co
-
+#__co
